@@ -21,46 +21,50 @@
     </div>
   </div>
   <script>
-    const AppTransportChannel = MermaidAppTransportChannel()
+    const init = () => {
+      const AppTransportChannel = MermaidAppTransportChannel()
 
-    const allowVoice = {}
+      const allowVoice = {}
 
-    const voice = ({ username, text }) => {
-      const isRu = text.match(/[йцукенгшщзхъфывапролджэячсмитьбюё]/gi)
+      const voice = ({ username, text }) => {
+        const isRu = text.match(/[йцукенгшщзхъфывапролджэячсмитьбюё]/gi)
 
-      window.speechSynthesis.speak(
-        new SpeechSynthesisUtterance(
-          username + (isRu ? ', говорит: ' : ', say: ') + text,
-          {
-            'lang': isRu ? 'ru-RU' : 'en-US',
-            'rate': 0.8,
-            'enqueue': true
-          }
+        window.speechSynthesis.speak(
+          new SpeechSynthesisUtterance(
+            username + (isRu ? ', говорит: ' : ', say: ') + text,
+            {
+              'lang': isRu ? 'ru-RU' : 'en-US',
+              'rate': 0.8,
+              'enqueue': true
+            }
+          )
         )
-      )
+      }
+
+      AppTransportChannel.on('connect', () => {
+        AppTransportChannel.on('readData', async ({ type, data }) => {
+          if (type === 'voice') {
+            voice(data)
+          }
+
+          if (type === 'reload') {
+            localStorage.clear()
+            window.location.reload()
+          }
+        })
+
+        document.querySelector('#settings').addEventListener('click', () => {
+          AppTransportChannel.openWindow({
+            file: 'settings-speaker.html',
+            width: 258,
+            height: 300,
+            alwaysOnTop: true
+          })
+        })
+      })    
     }
 
-    AppTransportChannel.on('connect', () => {
-      AppTransportChannel.on('readData', async ({ type, data }) => {
-        if (type === 'voice') {
-          voice(data)
-        }
-
-        if (type === 'reload') {
-          localStorage.clear()
-          window.location.reload()
-        }
-      })
-
-      document.querySelector('#settings').addEventListener('click', () => {
-        AppTransportChannel.openWindow({
-          file: 'settings-speaker.html',
-          width: 258,
-          height: 300,
-          alwaysOnTop: true
-        })
-      })
-    })
+    window.addEventListener('load', init)
   </script>
 </body>
 </html>
